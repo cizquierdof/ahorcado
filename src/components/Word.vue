@@ -1,6 +1,7 @@
 <template>
   <div class="word">
-    <div v-if="secretWord">
+    <div v-if="!secretWord">...loading</div>
+    <div v-else>
       <div><h2>Aciertos</h2></div>
       <span v-for="(letra, i) in acertadas" :key="i">
         {{ letra }}
@@ -12,12 +13,13 @@
         </div>
       </div>
     </div>
-    <div v-else>...loading</div>
   </div>
 </template>
 
 <script>
 import bus from "../bus";
+import axios from "axios";
+
 export default {
   data() {
     return {
@@ -25,15 +27,18 @@ export default {
       letra: "",
       listaLetras: [],
       vidas: 6,
+      secretWord: "",
+      loading: true,
     };
   },
-  props: ["secretWord"],
-  mounted() {},
-  created() {
-    for (let index = 0; index < this.secretWord.length; index++) {
-      this.acertadas[index] = "_";
-      //console.log('acertadas', this.acertadas);
-    }
+  mounted() {
+    bus.$on("set:word", (e) => {
+      this.secretWord = e;
+      for (let index = 0; index < this.secretWord.length; index++) {
+        this.acertadas[index] = "_";
+      }
+    });
+
     bus.$on("add:letra", (event) => {
       this.listaLetras.push(event);
       this.isInSolution(event);
@@ -51,6 +56,9 @@ export default {
       console.log("fallo", fallo);
       fallo && this.vidas--;
       bus.$emit("dec:vidas", this.vidas);
+    },
+    setWord() {
+      return axios.get("https://api.datamuse.com/words?rel_jja=yellow");
     },
   },
 };
